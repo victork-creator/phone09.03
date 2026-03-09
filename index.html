@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Upgrade App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-in-from-bottom { from { transform: translateY(1rem); } to { transform: translateY(0); } }
+        @keyframes zoom-in { from { transform: scale(0.95); } to { transform: scale(1); } }
+        
+        .animate-fade-in { animation: fade-in 500ms ease-out forwards; }
+        .animate-slide-up { animation: slide-in-from-bottom 500ms ease-out forwards; }
+        .animate-zoom { animation: zoom-in 300ms ease-out forwards; }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #wheel-needle {
+            transition: transform 3.5s cubic-bezier(0.15, 0, 0, 1);
+        }
+    </style>
+</head>
+<body class="transition-colors duration-500 font-sans">
+
+    <div id="app-wrapper" class="min-h-screen flex justify-center items-center p-0 overflow-hidden">
+        
+        <!-- Main Container (Fixed Width, Straight Edges) -->
+        <div id="mobile-container" class="w-full max-w-[430px] min-h-screen shadow-2xl relative overflow-hidden flex flex-col border-x transition-all duration-500 bg-white">
+            
+            <div id="main-content" class="flex flex-col flex-1 transition-all duration-1000">
+                
+                <!-- Header -->
+                <header id="header" class="px-6 py-6 flex justify-between items-center border-b sticky top-0 backdrop-blur-md z-50">
+                    <div class="flex items-center gap-2">
+                        <div id="logo-box" class="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center font-black italic text-xs">P</div>
+                        <h1 id="header-title" class="text-sm font-bold tracking-tighter uppercase italic">Phone Upgrade</h1>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleTheme()" class="opacity-50 hover:opacity-100 transition-colors p-1">
+                            <i data-lucide="palette" class="w-5 h-5"></i>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                            <span class="text-[10px] font-black uppercase opacity-40 tracking-widest">Live</span>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="flex-1 overflow-y-auto px-6 pb-12 pt-4">
+                    <!-- Step 0: Selection Carousel -->
+                    <div id="step-0" class="space-y-10 animate-fade-in text-center">
+                        <div class="space-y-2 mt-6">
+                            <h2 id="hero-title" class="text-3xl font-black uppercase tracking-tighter leading-none">Select Device</h2>
+                            <p id="hero-sub" class="opacity-50 text-xs tracking-tight">Swipe to choose your starter device</p>
+                        </div>
+
+                        <div class="relative flex items-center justify-center py-4 group h-[420px]">
+                            <button onclick="handlePrev()" class="absolute left-0 z-20 p-3 bg-white shadow-xl border rounded-full active:scale-75 transition-all">
+                                <i data-lucide="chevron-left" class="w-5 h-5 text-black"></i>
+                            </button>
+                            
+                            <div id="carousel-card" class="bg-slate-50 border p-8 rounded-[3rem] w-full h-full shadow-inner flex flex-col items-center justify-center relative overflow-hidden">
+                                <div class="h-64 flex items-center justify-center mb-6 relative z-10">
+                                    <img id="carousel-img" src="" alt="phone" class="h-full object-contain drop-shadow-2xl animate-zoom">
+                                </div>
+                                <h3 id="carousel-name" class="font-bold text-center text-lg leading-tight px-4 relative z-10"></h3>
+                            </div>
+
+                            <button onclick="handleNext()" class="absolute right-0 z-20 p-3 bg-white shadow-xl border rounded-full active:scale-75 transition-all">
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-black"></i>
+                            </button>
+                        </div>
+
+                        <button onclick="startJourney()" id="start-btn" class="w-full py-5 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-sm shadow-xl active:scale-95 transition-all">
+                            Start Upgrade
+                        </button>
+                    </div>
+
+                    <!-- Step 1 & 2: Upgrade Interface -->
+                    <div id="step-upgrade" class="hidden py-6 space-y-10 animate-fade-in">
+                        <div class="flex flex-col items-center gap-10">
+                            <div class="relative w-64 h-64 flex items-center justify-center scale-110">
+                                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                    <circle id="wheel-bg" cx="50" cy="50" r="45" fill="none" stroke="#f8fafc" stroke-width="10" />
+                                    <circle id="wheel-luck" cx="50" cy="50" r="45" fill="none" stroke="#8b5cf6" stroke-width="10" stroke-dasharray="197 282.7" stroke-linecap="butt" class="transition-all duration-700 ease-in-out" />
+                                </svg>
+
+                                <div id="wheel-needle" class="absolute w-2 h-32 top-0 left-1/2 origin-bottom z-20" style="transform: translateX(-50%) rotate(0deg);">
+                                    <div class="w-6 h-6 bg-red-600 rounded-full -mt-3 -ml-2 shadow-2xl border-2 border-white relative z-30"></div>
+                                    <div class="w-1.5 h-full bg-gradient-to-t from-red-600 to-red-400 rounded-full shadow-inner"></div>
+                                </div>
+
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div id="center-icon" class="w-12 h-12 bg-white rounded-full border shadow-sm flex items-center justify-center">
+                                        <i data-lucide="trending-up" class="w-5 h-5 opacity-20 text-black"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="w-full space-y-5 px-4 text-center">
+                                <button onclick="executeUpgrade()" id="upgrade-btn" class="w-full py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-xl shadow-2xl transition-all active:scale-95">
+                                    UPGRADE NOW
+                                </button>
+                                <div class="flex justify-between text-[8px] font-black uppercase tracking-[0.4em] opacity-30 px-2">
+                                    <span>Low Luck</span>
+                                    <span>Next Tier</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div id="source-slot" class="rounded-[2.5rem] border p-5 flex flex-col items-center shadow-sm">
+                                <span class="text-[8px] font-black uppercase tracking-widest opacity-40 mb-4">Source</span>
+                                <div class="h-28 flex items-center justify-center">
+                                    <img id="source-img" src="" class="h-full object-contain drop-shadow-xl" alt="source">
+                                </div>
+                            </div>
+                            <div id="target-slot" class="rounded-[2.5rem] border p-5 flex flex-col items-center relative overflow-hidden shadow-sm">
+                                <div id="target-pulse" class="absolute inset-0 animate-pulse opacity-5"></div>
+                                <span id="target-label" class="text-[8px] font-black uppercase tracking-widest mb-4 relative z-10">Target</span>
+                                <div class="h-28 flex items-center justify-center relative z-10">
+                                    <img id="target-img" src="" class="h-full object-contain brightness-95 grayscale-[0.2]" alt="target">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-center gap-2 pb-6">
+                            <div class="mode-tab flex-1 text-center py-4 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all opacity-40">Safe</div>
+                            <div id="active-mode" class="flex-1 text-center py-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all">Stable</div>
+                            <div class="mode-tab flex-1 text-center py-4 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all opacity-40">Risky</div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+
+            <!-- Step 3: Success Overlay -->
+            <div id="success-overlay" class="hidden absolute inset-0 z-[100] flex items-center justify-center p-8 backdrop-blur-3xl animate-fade-in">
+                <div class="w-full text-center space-y-12">
+                    <div id="success-icon-box" class="w-32 h-32 bg-green-500/10 border border-green-500/20 rounded-full flex items-center justify-center mx-auto animate-bounce shadow-2xl">
+                        <i data-lucide="shield-check" class="w-16 h-16 text-green-500"></i>
+                    </div>
+                    <div class="space-y-4">
+                        <h2 id="success-title" class="text-5xl font-black uppercase tracking-tighter leading-[0.85]">Upgrade<br/><span id="success-accent">Successful</span></h2>
+                        <div id="success-line" class="h-2 w-20 mx-auto rounded-full mt-4 shadow-sm"></div>
+                    </div>
+                    <div id="success-card" class="p-10 rounded-[3rem] border shadow-inner scale-105">
+                        <p id="success-text" class="text-2xl font-bold tracking-tight leading-tight italic opacity-90">Get more insights about Phone Bundle in 2026</p>
+                    </div>
+                    <button onclick="location.reload()" id="restart-btn" class="w-full py-6 text-white font-black rounded-[1.5rem] uppercase tracking-[0.3em] text-xs shadow-xl active:scale-95 transition-all">
+                        Start New Session
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="bg-text" class="hidden xl:block fixed left-12 bottom-12 opacity-5 pointer-events-none select-none">
+            <h1 class="text-9xl font-black tracking-tighter leading-none italic">PHONE<br/>UPGRADE</h1>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const INITIAL_PHONES = [
+            { id: 'iphone11', name: "iPhone 11 128GB White", img: "https://yabloki.ua/media/cache/sylius_shop_product_original/d8/10/iphone-11-white-128gb-slim-box-1.png.webp" },
+            { id: 'xiaomi', name: "Xiaomi Redmi Note 14 6/128GB Mist Purple", img: "https://yabloki.ua/media/cache/sylius_shop_product_original/82/e5/smartfon-xiaomi-redmi-note-14-6-128gb-mist-purple-global_580ee612-9d53-4087-922b-2e2f44c6e12e-6.png.webp" },
+            { id: 'oppo', name: "OPPO Reno12 FS 12/512GB (Black Green)", img: "https://yabloki.ua/media/cache/sylius_shop_product_original/01/22/smartfon-oppo-reno12-fs-12-512gb-black-green_8423f8e4-3bd5-4eaa-96bd-3d703e1b968d-5.png.webp" }
+        ];
+
+        const TARGET_PHONES = {
+            iphone14pro: { name: "iPhone 14 Pro 128GB Deep Purple", img: "https://yabloki.ua/media/cache/sylius_shop_product_original/53/f0/iphone-14-pro-deep-purple-128gb-1.png.webp" },
+            iphone17promax: { name: "iPhone 17 Pro Max 256GB White", img: "https://yabloki.ua/media/cache/sylius_shop_product_original/21/9b/iphone-17-pro-max-256-gb-white-now-1.png.webp" }
+        };
+
+        const THEMES = [
+            { id: 'light', bg: 'bg-slate-50', card: 'bg-white', text: 'text-slate-900', subtext: 'text-slate-400', accent: 'text-purple-600', button: 'bg-slate-900', wheelBase: '#f8fafc', wheelAccent: '#8b5cf6', border: 'border-slate-100', accentBg: 'bg-purple-600' },
+            { id: 'midnight', bg: 'bg-[#0f172a]', card: 'bg-[#1e293b]', text: 'text-white', subtext: 'text-slate-400', accent: 'text-emerald-400', button: 'bg-emerald-500', wheelBase: '#334155', wheelAccent: '#10b981', border: 'border-slate-700', accentBg: 'bg-emerald-600' },
+            { id: 'gold', bg: 'bg-[#1a1a1a]', card: 'bg-[#262626]', text: 'text-white', subtext: 'text-stone-500', accent: 'text-amber-400', button: 'bg-gradient-to-r from-amber-500 to-yellow-600', wheelBase: '#404040', wheelAccent: '#fbbf24', border: 'border-stone-800', accentBg: 'bg-amber-600' }
+        ];
+
+        // State
+        let step = 0;
+        let carouselIdx = 0;
+        let currentThemeIdx = 0;
+        let rotation = 0;
+        let winChance = 70;
+        let isSpinning = false;
+
+        // UI Updates
+        function updateUI() {
+            const theme = THEMES[currentThemeIdx];
+            
+            // Apply Theme
+            document.body.className = `transition-colors duration-500 font-sans ${theme.bg}`;
+            document.getElementById('app-wrapper').className = `min-h-screen ${theme.bg} flex justify-center items-center p-0 overflow-hidden transition-colors duration-500`;
+            
+            // Mobile Container (Removed md:rounded-[3rem] for straight edges)
+            document.getElementById('mobile-container').className = `w-full max-w-[430px] min-h-screen ${theme.card} shadow-2xl relative overflow-hidden flex flex-col border-x ${theme.border} transition-all duration-500`;
+            
+            document.getElementById('header').className = `px-6 py-6 flex justify-between items-center border-b ${theme.border} sticky top-0 ${theme.card}/90 backdrop-blur-md z-50`;
+            document.getElementById('header-title').className = `text-sm font-bold tracking-tighter uppercase ${theme.text} italic`;
+            document.getElementById('logo-box').className = `w-8 h-8 ${currentThemeIdx === 0 ? 'bg-black text-white' : 'bg-white text-black'} rounded-lg flex items-center justify-center font-black italic text-xs`;
+            
+            // Carousel
+            document.getElementById('carousel-card').className = `${theme.bg} border ${theme.border} p-8 rounded-[3rem] w-full h-full shadow-inner transition-all flex flex-col items-center justify-center relative overflow-hidden`;
+            document.getElementById('carousel-name').className = `font-bold ${theme.text} text-center text-lg leading-tight px-4 relative z-10`;
+            document.getElementById('hero-title').className = `text-3xl font-black uppercase tracking-tighter leading-none ${theme.text}`;
+            document.getElementById('start-btn').className = `w-full py-5 ${theme.button} text-white rounded-2xl font-black uppercase tracking-[0.2em] text-sm shadow-xl active:scale-95 transition-all`;
+            
+            // Upgrade
+            document.getElementById('wheel-bg').setAttribute('stroke', theme.wheelBase);
+            document.getElementById('wheel-luck').setAttribute('stroke', theme.wheelAccent);
+            document.getElementById('upgrade-btn').className = `w-full py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-xl shadow-2xl transition-all active:scale-95 ${isSpinning ? 'bg-slate-700/20 text-slate-500' : `${theme.button} text-white shadow-xl`}`;
+            document.getElementById('source-slot').className = `${theme.bg} rounded-[2.5rem] border ${theme.border} p-5 flex flex-col items-center shadow-sm`;
+            document.getElementById('target-slot').className = `${theme.bg} rounded-[2.5rem] border ${theme.border} p-5 flex flex-col items-center relative overflow-hidden shadow-sm`;
+            document.getElementById('target-label').className = `text-[8px] font-black uppercase tracking-widest ${theme.accent} mb-4 relative z-10`;
+            document.getElementById('active-mode').className = `flex-1 text-center py-4 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${theme.card} ${theme.border} ${theme.accent}`;
+            document.getElementById('bg-text').className = `hidden xl:block fixed left-12 bottom-12 opacity-5 pointer-events-none select-none ${theme.text}`;
+            
+            // Success
+            document.getElementById('success-overlay').className = `${step === 3 ? '' : 'hidden'} absolute inset-0 z-[100] flex items-center justify-center p-8 ${theme.card}/95 backdrop-blur-3xl animate-fade-in`;
+            document.getElementById('success-title').className = `text-5xl font-black ${theme.text} uppercase tracking-tighter leading-[0.85]`;
+            document.getElementById('success-accent').className = theme.accent;
+            document.getElementById('success-line').className = `h-2 w-20 ${theme.accentBg} mx-auto rounded-full mt-4 shadow-sm`;
+            document.getElementById('success-card').className = `${theme.bg} p-10 rounded-[3rem] border ${theme.border} shadow-inner scale-105`;
+            document.getElementById('restart-btn').className = `w-full py-6 ${theme.button} text-white font-black rounded-[1.5rem] uppercase tracking-[0.3em] text-xs shadow-xl active:scale-95 transition-all`;
+            
+            document.getElementById('success-text').className = `text-2xl font-bold ${theme.text} tracking-tight leading-tight italic opacity-90`;
+
+            // Content
+            document.getElementById('carousel-img').src = INITIAL_PHONES[carouselIdx].img;
+            document.getElementById('carousel-name').innerText = INITIAL_PHONES[carouselIdx].name;
+            
+            if (step > 0) {
+                const src = (step === 1) ? INITIAL_PHONES[carouselIdx] : TARGET_PHONES.iphone14pro;
+                const trg = (step === 1) ? TARGET_PHONES.iphone14pro : TARGET_PHONES.iphone17promax;
+                document.getElementById('source-img').src = src.img;
+                document.getElementById('target-img').src = trg.img;
+                document.getElementById('wheel-luck').setAttribute('stroke-dasharray', `${winChance * 2.827} 282.7`);
+            }
+        }
+
+        function handleNext() { if(!isSpinning) { carouselIdx = (carouselIdx + 1) % INITIAL_PHONES.length; updateUI(); } }
+        function handlePrev() { if(!isSpinning) { carouselIdx = (carouselIdx - 1 + INITIAL_PHONES.length) % INITIAL_PHONES.length; updateUI(); } }
+        function toggleTheme() { currentThemeIdx = (currentThemeIdx + 1) % THEMES.length; updateUI(); }
+
+        function startJourney() {
+            step = 1;
+            winChance = 70;
+            document.getElementById('step-0').classList.add('hidden');
+            document.getElementById('step-upgrade').classList.remove('hidden');
+            updateUI();
+        }
+
+        function executeUpgrade() {
+            if (isSpinning) return;
+            isSpinning = true;
+            updateUI();
+
+            const extraSpins = 360 * (6 + Math.floor(Math.random() * 2));
+            const sectorAngle = (winChance / 100) * 360;
+            const targetAngle = 10 + Math.random() * (sectorAngle - 20);
+            
+            const currentAngle = rotation % 360;
+            const toNextZero = 360 - currentAngle;
+            const finalRotation = rotation + toNextZero + extraSpins + targetAngle;
+            
+            rotation = finalRotation;
+            document.getElementById('wheel-needle').style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                const theme = THEMES[currentThemeIdx];
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.7 },
+                    colors: [theme.wheelAccent, '#ffffff', '#000000']
+                });
+
+                setTimeout(() => {
+                    if (step === 1) {
+                        step = 2;
+                        winChance = 35;
+                    } else {
+                        step = 3;
+                        document.getElementById('main-content').classList.add('blur-3xl', 'scale-90', 'brightness-75');
+                    }
+                    isSpinning = false;
+                    updateUI();
+                }, 1000);
+            }, 3500);
+        }
+
+        window.onload = () => {
+            lucide.createIcons();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
